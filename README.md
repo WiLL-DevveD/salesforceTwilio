@@ -1,2 +1,2 @@
-# salesforceTwilio
-api on mulesoft to connect salesforce and twilio
+# mule-salesforce-tawlio
+project to connect salesforce with twilio

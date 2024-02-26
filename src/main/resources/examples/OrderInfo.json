@@ -1,0 +1,12 @@
+{
+         "OppId": "fsjf3439d993",
+         "OrderAmount": 500000,
+         "orderdate": "2018-11-13T11:15:45",
+         "productInfo": {
+         "productID": "CK111274",
+         "category": "Small",
+         "SKU": "CKS0",
+         "productName": "Old School Classic Kicks",
+         "inventory": 9999
+    }
+}

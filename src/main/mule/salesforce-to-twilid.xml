@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:twilio-connector="http://www.mulesoft.org/schema/mule/twilio-connector" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:slack="http://www.mulesoft.org/schema/mule/slack" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/slack http://www.mulesoft.org/schema/mule/slack/current/mule-slack.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/twilio-connector http://www.mulesoft.org/schema/mule/twilio-connector/current/mule-twilio-connector.xsd">
+	
+	<flow name="salesforce-to-twilidFlow" doc:id="3b850aa2-a4b8-44ee-9eb1-bf07f7d7149d" >
+		<salesforce:subscribe-topic-listener doc:name="Subscribe topic listener" doc:id="652e7588-1fb9-4e3b-9151-d53a6a984fa7" config-ref="Salesforce_Config" topic="successOp"/>
+		<set-variable value="#[payload]" doc:name="save sales opp" doc:id="2fb41ac2-008f-4b6f-959a-1b9aa2d1c222" variableName="salesOpp"/>
+		<choice doc:name="Choice" doc:id="34179d31-b140-4a9b-aa65-84fc7ef79216">
+			<when expression="#[%dw 2.0&#10;output application/json&#10;---&#10;payload.Amount &gt; 10000]">
+				<db:select doc:name="Select" doc:id="fcc6828e-03d6-4092-b2d2-7cdbbfb651f1" config-ref="Database_Config">
+					<db:sql><![CDATA[select * from products where category = 'Enterprise' and inventory > 1 limit 1]]></db:sql>
+				</db:select>
+			</when>
+			<when expression="#[%dw 2.0&#10;output application/json&#10;---&#10;payload.Amount &gt; 500]">
+				<db:select doc:name="Select" doc:id="05ffe5cf-6d23-4eb8-ad39-cd8a30b8cf8b" config-ref="Database_Config">
+					<db:sql><![CDATA[select * from products where category = 'Small Business' and inventory > 1 limit 1]]></db:sql>
+				</db:select>
+			</when>
+			<otherwise>
+				<set-payload value='#[[&#10; {&#10;  "productID": "CK111274",&#10;  "category": "Retail",&#10;  "SKU": "CKS0",&#10;  "productName": "Old School Classic Kicks",&#10;  "inventory": 9999&#10; }&#10;]]' doc:name="Set Payload" doc:id="a74c725c-49ab-4572-88f4-1f78828eb16b" />
+			</otherwise>
+		</choice>
+		<set-variable value="#[payload]" doc:name="Set Variable" doc:id="8646c094-6059-46fb-b0d1-ed97b7fa2eac" variableName="OrderDetails" />
+		<ee:transform doc:name="Transform Message" doc:id="29c834ea-5710-48ed-9cd5-4711e94ec341">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	OppId: vars.salesOpp.Id,
+	OrderAmount: vars.salesOpp.Amount,
+	orderdate: vars.salesOpp.CloseDate,
+	productInfo: {
+		productID: attributes.productID,
+		category: attributes.category,
+		SKU: attributes.SKU,
+		productName: attributes.productName,
+		inventory: attributes.inventory
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="Request" doc:id="88372316-f8cf-4f33-88b8-19df37f77d12" config-ref="HTTP_Request_configuration" url="https://anypoint.mulesoft.com/mocking/api/v1/sources/exchange/assets/org.mule.examples/quick-start-nto-orders-api/1.0.0/m/orders"/>
+		<ee:transform doc:name="Transform Message" doc:id="b6acb4e7-c239-4215-bf80-447dcf00d709" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/x-www-form-urlencoded
+---
+{
+To:p("twilio.toNumber"),
+From:p("twilio.fromNumber"),
+Body: "Order for " ++ vars.salesOpp.Name ++ " has been placed. Details:
+" ++ "OrderID: " ++ payload.OrderID as String ++ ", Tracking: " ++ payload.TrackingNo ++ ", ETA:" ++ payload.ETA as Date
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<twilio-connector:send-message doc:name="Send message" doc:id="6981f9ef-ae57-440f-836c-fec6784ec819" config-ref="Twilio_Connector_Config" account-sid="${twilio.username}">
+		</twilio-connector:send-message>
+		<salesforce:update type="Opportunity" doc:name="Update" doc:id="2afdddea-3757-491f-893d-8dd307f12de4" config-ref="Salesforce_Config">
+			<salesforce:records><![CDATA[#[output application/json
+---
+vars.OrderDetails map ( orderDetail , indexOfOrderDetail ) -> {
+	Id: vars.salesOpp.Id,
+	OrderNumber__c: orderDetail.productID as String
+}]]]></salesforce:records>
+		</salesforce:update>
+		<logger level="INFO" doc:name="Logger" doc:id="26149512-e1f1-430d-b938-36e9d5a2d0a9" message='#[%dw 2.0&#10;output application/json&#10;---&#10;{&#10;	"id": payload.id,&#10;	"result":payload.successful,&#10;	"itens":payload.items&#10;}]'/>
+	</flow>
+</mule>

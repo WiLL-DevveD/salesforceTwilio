@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:twilio-connector="http://www.mulesoft.org/schema/mule/twilio-connector"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/twilio-connector http://www.mulesoft.org/schema/mule/twilio-connector/current/mule-twilio-connector.xsd">
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="a520a04b-880d-43e5-b070-12af7ee054cf" >
+		<salesforce:basic-connection username="${salesforce.username}" password="${salesforce.password}" securityToken="${salesforce.token}" />
+	</salesforce:sfdc-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="ffd27727-d5b6-48d4-b53b-26f6857b45a7" file="config.yaml" />
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="a4c0a043-6bc3-427d-a94e-257b2e392a0f" >
+		<db:my-sql-connection host="ntoproducts.c3w6upfzlwwe.us-west-1.rds.amazonaws.com" port="3306" user="mulesoft" password="mulesoft" database="nto_products" />
+	</db:config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="43027178-c93b-4053-b4f1-403658281f14" />
+	<twilio-connector:config name="Twilio_Connector_Config" doc:name="Twilio Connector Config" doc:id="218833c8-60b1-4977-bd81-656f481bb312" property_username="${twilio.username}" property_password="${twilio.token}"/>
+
+</mule>
+

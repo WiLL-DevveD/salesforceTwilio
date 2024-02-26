@@ -1,0 +1,101 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="SalesOPP" format="json">
+      <types:shape format="weave" example="examples/salesOpp-1.json"><![CDATA[%dw 2.0
+
+type SalesOPP = {|
+  Amount: Number {"typeId": "int"}, 
+  Id: String, 
+  CloseDate: String, 
+  Name: String
+|} {"example": "{\\\"Amount\\\":15000,\\\"Id\\\":\\\"0061U0000079dWXQAY\\\",\\\"CloseDate\\\":\\\"2019-01-25T00:00:00.000Z\\\",\\\"Name\\\":\\\"Dickenson Mobile Generators\\\"}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="oppDetails" format="json">
+      <types:shape format="weave" example="examples/productInfoSQL.json"><![CDATA[%dw 2.0
+
+type oppDetails = Array<{|  productID: String,   category: String,   SKU: String,   productName: String,   inventory: Number {"typeId": "int"}|}> {"example": "[{\\\"productID\\\":\\\"CK989603\\\",\\\"category\\\":\\\"Medium\\\",\\\"SKU\\\":\\\"CKS50\\\",\\\"productName\\\":\\\"Air Fly High Quality Sneakers\\\",\\\"inventory\\\":22333}]"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="prodInfo" format="json">
+      <types:shape format="weave" example="examples/productInfoSQL.json"><![CDATA[%dw 2.0
+
+type prodInfo = Array<{|  productID: String,   category: String,   SKU: String,   productName: String,   inventory: Number {"typeId": "int"}|}> {"example": "[{\\\"productID\\\":\\\"CK989603\\\",\\\"category\\\":\\\"Medium\\\",\\\"SKU\\\":\\\"CKS50\\\",\\\"productName\\\":\\\"Air Fly High Quality Sneakers\\\",\\\"inventory\\\":22333}]"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="orderInfo" format="json">
+      <types:shape format="weave" example="examples/OrderInfo.json"><![CDATA[%dw 2.0
+
+type orderInfo = {|
+  OppId: String, 
+  OrderAmount: Number {"typeId": "int"}, 
+  orderdate: String, 
+  productInfo: {|
+    productID: String, 
+    category: String, 
+    SKU: String, 
+    productName: String, 
+    inventory: Number {"typeId": "int"}
+  |}
+|} {"example": "{\\\"OppId\\\":\\\"fsjf3439d993\\\",\\\"OrderAmount\\\":500000,\\\"orderdate\\\":\\\"2018-11-13T11:15:45\\\",\\\"productInfo\\\":{\\\"productID\\\":\\\"CK111274\\\",\\\"category\\\":\\\"Small\\\",\\\"SKU\\\":\\\"CKS0\\\",\\\"productName\\\":\\\"Old School Classic Kicks\\\",\\\"inventory\\\":9999}}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="orderTracking" format="json">
+      <types:shape format="weave" example="examples/OrderTrack.json"><![CDATA[%dw 2.0
+
+type orderTracking = {|
+  OrderID: Number {"typeId": "int"}, 
+  TrackingNo: String, 
+  ETA: String
+|} {"example": "{\\\"OrderID\\\":50122,\\\"TrackingNo\\\":\\\"Z34342211\\\",\\\"ETA\\\":\\\"2018-11-13T11:15:45\\\"}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#652e7588-1fb9-4e3b-9151-d53a6a984fa7">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="SalesOPP"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#29c834ea-5710-48ed-9cd5-4711e94ec341">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:attributes type="prodInfo"/>
+        </types:message>
+      </types:input-event>
+      <types:output-event>
+        <types:message>
+          <types:payload type="orderInfo"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#b6acb4e7-c239-4215-bf80-447dcf00d709">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="orderTracking"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#2afdddea-3757-491f-893d-8dd307f12de4">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:variables>
+          <types:variable name="OrderDetails" type="oppDetails"/>
+        </types:variables>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>
