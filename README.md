@@ -1,2 +1,2 @@
-# mule-salesforce-tawlio
+# mule-salesforce-twilio
 project to connect salesforce with twilio
